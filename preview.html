@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>ENEStage</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #eef2f7, #dfe9f3);
+    overflow-x: hidden;
+}
+
+/* NAVBAR */
+.navbar {
+    background-color: #0b3558;
+    padding: 15px 40px;
+    display: flex;
+    align-items: center;
+    animation: slideDown 0.8s ease;
+}
+
+.navbar h2 {
+    color: white;
+    margin: 0;
+    margin-right: 40px;
+}
+
+.navbar a {
+    color: #cfd8dc;
+    text-decoration: none;
+    margin-right: 20px;
+    padding: 8px 14px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.navbar a:hover {
+    background-color: #1e5a86;
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* HERO */
+.hero {
+    padding: 80px 50px;
+    animation: fadeInUp 1s ease;
+}
+
+.hero h1 {
+    color: #0b3558;
+    font-size: 32px;
+    margin-bottom: 10px;
+}
+
+.hero p {
+    color: #555;
+    margin-bottom: 30px;
+}
+
+/* BUTTON */
+.btn {
+    display: inline-block;
+    background: linear-gradient(135deg, #6c63ff, #4e54c8);
+    color: white;
+    padding: 14px 25px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Glow effect */
+.btn::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(120deg, transparent, rgba(255,255,255,0.4), transparent);
+    transition: 0.5s;
+}
+
+.btn:hover::before {
+    left: 100%;
+}
+
+.btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+/* ANIMATIONS */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* FLOATING BACKGROUND BLOBS */
+body::before, body::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(108, 99, 255, 0.15);
+    animation: float 6s infinite ease-in-out;
+}
+
+body::before {
+    width: 200px;
+    height: 200px;
+    top: 100px;
+    left: -50px;
+}
+
+body::after {
+    width: 300px;
+    height: 300px;
+    bottom: -100px;
+    right: -80px;
+    animation-delay: 2s;
+}
+
+@keyframes float {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+}
+</style>
+
+</head>
+<body>
+
+<div class="navbar">
+    <h2>ENEStage</h2>
+    <a href="etudiants.php">Étudiants</a>
+    <a href="entreprises.php">Entreprises</a>
+    <a href="offres.php">Offres</a>
+</div>
+
+<div class="hero">
+    <h1>Portail de suivi de stage</h1>
+    <p>Gérez vos stages, candidatures et évaluations en un seul endroit.</p>
+
+    <a href="/enestage/auth/login.php" class="btn">Accéder au portail</a>
+</div>
+
+</body>
+</html>

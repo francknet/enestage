@@ -1,0 +1,21 @@
+# Fichiers sensibles
+.env
+config.php
+
+# Dépendances
+/vendor/
+
+# Logs
+*.log
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+
+# XAMPP / temp
+/tmp/
+/cache/
+
+# IDE (VS Code, etc.)
+.vscode/
+.idea/
