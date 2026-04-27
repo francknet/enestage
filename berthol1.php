@@ -8,7 +8,6 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role
 }
 
 $conn = new mysqli("localhost", "root", "", "enestage");
-
 if ($conn->connect_error) {
     die("Erreur connexion : " . $conn->connect_error);
 }
@@ -219,6 +218,7 @@ table tr:hover td {
 <div class="main">
 
 <?php
+// Messages
 ob_start();
 
 // CREER ETUDIANT
@@ -227,16 +227,9 @@ if (isset($_POST['create_etudiant'])) {
         $nom = $_POST['nom']; $prenom = $_POST['prenom'];
         $email = $_POST['email'];
         $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-
         $stmt = $conn->prepare("INSERT INTO users (nom, prenom, email, password, role) VALUES (?, ?, ?, ?, 'etudiant')");
         $stmt->bind_param("ssss", $nom, $prenom, $email, $password);
         $stmt->execute();
-        $new_user_id = $conn->insert_id;
-
-        $stmt2 = $conn->prepare("INSERT INTO etudiants (user_id) VALUES (?)");
-        $stmt2->bind_param("i", $new_user_id);
-        $stmt2->execute();
-
         echo '<div class="msg-success">✅ Étudiant créé avec succès</div>';
     } catch (Exception $e) {
         echo '<div class="msg-error">❌ Erreur : '.$e->getMessage().'</div>';
@@ -255,6 +248,7 @@ if (isset($_POST['create_entreprise'])) {
         $stmt->execute();
         $new_user_id = $conn->insert_id;
 
+        // ✅ Insérer aussi dans entreprises
         $stmt2 = $conn->prepare("INSERT INTO entreprises (user_id) VALUES (?)");
         $stmt2->bind_param("i", $new_user_id);
         $stmt2->execute();
@@ -264,7 +258,6 @@ if (isset($_POST['create_entreprise'])) {
         echo '<div class="msg-error">❌ Erreur : '.$e->getMessage().'</div>';
     }
 }
-
 // CREER ENCADRANT
 if (isset($_POST['create_encadrant'])) {
     try {
@@ -290,24 +283,19 @@ if (isset($_POST['affecter_encadrant'])) {
 
 // AFFECTER ENTREPRISE
 if (isset($_POST['affecter_entreprise'])) {
-    $etudiant_id = $_POST['etudiant_id']; 
-    $entreprise_id = $_POST['entreprise_id'];
-
+    $etudiant_id = $_POST['etudiant_id']; $entreprise_id = $_POST['entreprise_id'];
     $check = $conn->prepare("SELECT id FROM etudiants WHERE id=?");
-    $check->bind_param("i", $etudiant_id); 
-    $check->execute();
+    $check->bind_param("i", $etudiant_id); $check->execute();
     if ($check->get_result()->num_rows == 0) {
         echo '<div class="msg-error">❌ Étudiant inexistant</div>';
     } else {
-        $check2 = $conn->prepare("SELECT id FROM entreprises WHERE id=?");
-        $check2->bind_param("i", $entreprise_id); 
-        $check2->execute();
+        $check2 = $conn->prepare("SELECT id FROM users WHERE id=? AND role='entreprise'");
+        $check2->bind_param("i", $entreprise_id); $check2->execute();
         if ($check2->get_result()->num_rows == 0) {
             echo '<div class="msg-error">❌ Entreprise inexistante</div>';
         } else {
             $stmt = $conn->prepare("INSERT INTO affectations_entreprises (etudiant_id, entreprise_id) VALUES (?, ?)");
-            $stmt->bind_param("ii", $etudiant_id, $entreprise_id); 
-            $stmt->execute();
+            $stmt->bind_param("ii", $etudiant_id, $entreprise_id); $stmt->execute();
             echo '<div class="msg-success">✅ Affectation réussie</div>';
         }
     }
@@ -405,9 +393,9 @@ echo $messages;
                 <label>Étudiant</label>
                 <select name="etudiant_id">
                     <?php
-                    $liste_enc = $conn->query("SELECT etudiants.id, users.nom, users.prenom FROM etudiants JOIN users ON users.id = etudiants.user_id");
-                    while($row = $liste_enc->fetch_assoc()){
-                        echo "<option value='".$row['id']."'>".$row['nom']." ".$row['prenom']."</option>";
+                    $et = $conn->query("SELECT etudiants.id, users.prenom FROM etudiants JOIN users ON users.id = etudiants.user_id");
+                    while($row = $et->fetch_assoc()){
+                        echo "<option value='".$row['id']."'>".$row['prenom']."</option>";
                     }
                     ?>
                 </select>
@@ -416,10 +404,10 @@ echo $messages;
                 <label>Encadrant</label>
                 <select name="encadrant_id">
                     <?php
-                    $en = $conn->query("SELECT id, nom FROM users WHERE role='encadrant'");
-                    while($row = $en->fetch_assoc()){
-                        echo "<option value='".$row['id']."'>".$row['nom']."</option>";
-                    }
+                   $et = $conn->query("SELECT id, nom, prenom FROM users WHERE role='etudiant'");
+while($row = $et->fetch_assoc()){
+    echo "<option value='".$row['id']."'>".$row['nom']." ".$row['prenom']."</option>";
+} 
                     ?>
                 </select>
             </div>
@@ -435,10 +423,10 @@ echo $messages;
                 <label>Étudiant</label>
                 <select name="etudiant_id" required>
                     <?php
-                    $liste_entr = $conn->query("SELECT etudiants.id, users.nom, users.prenom FROM etudiants JOIN users ON users.id = etudiants.user_id");
-                while($row2 = $liste_entr->fetch_assoc()){
-                    echo "<option value='".$row2['id']."'>".$row2['nom']." ".$row2['prenom']."</option>";
-                }
+                    $res = $conn->query("SELECT etudiants.id, users.prenom FROM etudiants JOIN users ON users.id = etudiants.user_id");
+                    while($row = $res->fetch_assoc()){
+                        echo "<option value='".$row['id']."'>".$row['prenom']."</option>";
+                    }
                     ?>
                 </select>
             </div>
@@ -447,9 +435,9 @@ echo $messages;
                 <select name="entreprise_id" required>
                     <?php
                     $res2 = $conn->query("SELECT entreprises.id, users.nom FROM entreprises JOIN users ON users.id = entreprises.user_id");
-                while($row2 = $res2->fetch_assoc()){
-                    echo "<option value='".$row2['id']."'>".$row2['nom']."</option>";
-                }
+while($row2 = $res2->fetch_assoc()){
+    echo "<option value='".$row2['id']."'>".$row2['nom']."</option>";
+}
                     ?>
                 </select>
             </div>

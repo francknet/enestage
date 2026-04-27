@@ -62,7 +62,7 @@ if (isset($_GET['action']) && $_GET['action'] == "demande") {
 <form method="POST">
     <select name="entreprise_id">
         <?php
-        $req = $conn->query("SELECT id, nom FROM entreprises");
+        $req = $conn->query("SELECT entreprises.id, users.nom FROM entreprises JOIN users ON users.id = entreprises.user_id");
         while($row = $req->fetch(PDO::FETCH_ASSOC)){
             echo "<option value='".$row['id']."'>".$row['nom']."</option>";
         }
@@ -74,14 +74,12 @@ if (isset($_GET['action']) && $_GET['action'] == "demande") {
 if (isset($_POST['envoyer'])) {
     $etudiant = $_SESSION['user_id'];
     $entreprise = $_POST['entreprise_id'];
-
     $stmt = $conn->prepare("INSERT INTO demandes (etudiant_id, entreprise_id, statut) 
                             VALUES (?, ?, 'en attente')");
     $stmt->execute([$etudiant, $entreprise]);
     echo "✅ Demande envoyée !";
 }
 }
-
 // ======================
 // 2. STATUT DEMANDES
 // ======================
@@ -150,19 +148,18 @@ if (isset($_GET['action']) && $_GET['action'] == "cv") {
 // 4. ENTREPRISES AFFECTEES
 // ======================
 if (isset($_GET['action']) && $_GET['action'] == "entreprises") {
-    $etudiant_id = $_SESSION['user_id'];
-
+    $user_id = $_SESSION['user_id'];
     $stmt = $conn->prepare("
-        SELECT e.nom
+        SELECT u.nom
         FROM affectations_entreprises ae
+        JOIN etudiants et ON et.id = ae.etudiant_id
         JOIN entreprises e ON e.id = ae.entreprise_id
-        WHERE ae.etudiant_id = ?
+        JOIN users u ON u.id = e.user_id
+        WHERE et.user_id = ?
     ");
-    $stmt->execute([$etudiant_id]);
+    $stmt->execute([$user_id]);
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
     echo "<h3>Mes entreprises affectées</h3>";
-
     if (count($rows) > 0) {
         foreach ($rows as $row) {
             echo "- " . $row['nom'] . "<br>";
@@ -176,19 +173,17 @@ if (isset($_GET['action']) && $_GET['action'] == "entreprises") {
 // 5. ENCADRANT
 // ======================
 if (isset($_GET['action']) && $_GET['action'] == "encadreur") {
-    $etudiant_id = $_SESSION['user_id'];
-
+    $user_id = $_SESSION['user_id'];
     $stmt = $conn->prepare("
         SELECT u.nom, u.prenom
         FROM affectations_encadrants ae
-        JOIN users u ON ae.encadrant_id = u.id
-        WHERE ae.etudiant_id = ?
+        JOIN etudiants et ON et.id = ae.etudiant_id
+        JOIN users u ON u.id = ae.encadrant_id
+        WHERE et.user_id = ?
     ");
-    $stmt->execute([$etudiant_id]);
+    $stmt->execute([$user_id]);
     $encadrant = $stmt->fetch(PDO::FETCH_ASSOC);
-
     echo "<h3>Mon encadrant</h3>";
-
     if ($encadrant) {
         echo "Encadrant : " . $encadrant['prenom'] . " " . $encadrant['nom'];
     } else {
@@ -200,18 +195,15 @@ if (isset($_GET['action']) && $_GET['action'] == "encadreur") {
 // 6. EVALUATION
 // ======================
 if (isset($_GET['action']) && $_GET['action'] == "evaluation") {
-    $id = $_SESSION['user_id'];
-
+    $user_id = $_SESSION['user_id'];
     $stmt = $conn->prepare("
         SELECT note, commentaire 
         FROM evaluations
         WHERE etudiant_id = ?
     ");
-    $stmt->execute([$id]);
+    $stmt->execute([$user_id]);
     $evaluations = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
     echo "<h3>Mes évaluations</h3>";
-
     if (count($evaluations) > 0) {
         foreach($evaluations as $row){
             echo "Note: ".$row['note']." - ".$row['commentaire']."<br>";

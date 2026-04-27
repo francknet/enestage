@@ -225,20 +225,21 @@ $entreprise = $stmt->fetch(PDO::FETCH_ASSOC);
     <div class="section">
 
         <?php
-        // ======================
-        // RECUP ENTREPRISE_ID
-        // ======================
-        $stmt_ent = $conn->prepare("SELECT id FROM entreprises WHERE user_id = ?");
-        $stmt_ent->execute([$user_id]);
-        $entreprise_row = $stmt_ent->fetch(PDO::FETCH_ASSOC);
+      // ======================
+// RECUP ENTREPRISE_ID
+// ======================
+$stmt_ent = $conn->prepare("SELECT id FROM entreprises WHERE user_id = ?");
+$stmt_ent->execute([$user_id]);
+$ent = $stmt_ent->fetch(PDO::FETCH_ASSOC);
 
-        if (!$entreprise_row) {
-            $stmt_create = $conn->prepare("INSERT INTO entreprises (user_id) VALUES (?)");
-            $stmt_create->execute([$user_id]);
-            $entreprise_id = $conn->lastInsertId();
-        } else {
-            $entreprise_id = $entreprise_row['id'];
-        }
+if (!$ent) {
+    $stmt_create = $conn->prepare("INSERT INTO entreprises (user_id) VALUES (?)");
+    $stmt_create->execute([$user_id]);
+    $entreprise_id = $conn->lastInsertId();
+} else {
+    $entreprise_id = $ent['id'];
+}
+           
 
         // ======================
         // 1. ACCEPTER / REFUSER DEMANDE
@@ -305,39 +306,39 @@ $entreprise = $stmt->fetch(PDO::FETCH_ASSOC);
         ?>
 
         <!-- Réponses aux offres -->
-        <div class="card">
-            <h2>Réponses des étudiants aux offres</h2>
-            <?php
-            $stmt = $conn->prepare("
-                SELECT u.prenom, o.titre, r.statut
-                FROM reponses_offres r
-                JOIN users u ON u.id = r.etudiant_id
-                JOIN offres o ON o.id = r.offre_id
-                WHERE o.entreprise_id = ?
-                ORDER BY r.id DESC
-            ");
-            $stmt->execute([$entreprise_id]);
-            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+<div class="card">
+    <h2>Réponses des étudiants aux offres</h2>
+    <?php
+    $stmt = $conn->prepare("
+        SELECT u.prenom, o.titre, r.statut
+        FROM reponses_offres r
+        JOIN users u ON u.id = r.etudiant_id
+        JOIN offres o ON o.id = r.offre_id
+        WHERE o.entreprise_id = ?
+        ORDER BY r.id DESC
+    ");
+    $stmt->execute([$entreprise_id]);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            if (count($rows) > 0): ?>
-                <table>
-                    <tr>
-                        <th>Étudiant</th>
-                        <th>Offre</th>
-                        <th>Statut</th>
-                    </tr>
-                    <?php foreach($rows as $row): ?>
-                    <tr>
-                        <td><?= htmlspecialchars($row['prenom']) ?></td>
-                        <td><?= htmlspecialchars($row['titre']) ?></td>
-                        <td><strong><?= htmlspecialchars($row['statut']) ?></strong></td>
-                    </tr>
-                    <?php endforeach; ?>
-                </table>
-            <?php else: ?>
-                <p>❌ Aucune réponse pour le moment</p>
-            <?php endif; ?>
-        </div>
+    if (count($rows) > 0): ?>
+        <table>
+            <tr>
+                <th>Étudiant</th>
+                <th>Offre</th>
+                <th>Statut</th>
+            </tr>
+            <?php foreach($rows as $row): ?>
+            <tr>
+                <td><?= htmlspecialchars($row['prenom']) ?></td>
+                <td><?= htmlspecialchars($row['titre']) ?></td>
+                <td><strong><?= htmlspecialchars($row['statut']) ?></strong></td>
+            </tr>
+            <?php endforeach; ?>
+        </table>
+    <?php else: ?>
+        <p>❌ Aucune réponse pour le moment</p>
+    <?php endif; ?>
+</div>
 
         <!-- Publier une offre -->
         <div class="card">
@@ -356,100 +357,100 @@ $entreprise = $stmt->fetch(PDO::FETCH_ASSOC);
         </div>
 
         <!-- Demandes de stage -->
-        <div class="card">
-            <h2>Demandes de stage</h2>
-            <?php
-            $stmt = $conn->prepare("
-                SELECT demandes.id, users.nom, users.prenom, demandes.statut
-                FROM demandes
-                JOIN users ON users.id = demandes.etudiant_id
-                WHERE demandes.entreprise_id = ?
-            ");
-            $stmt->execute([$user_id]);
-            $demandes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+<div class="card">
+    <h2>Demandes de stage</h2>
+    <?php
+    $stmt = $conn->prepare("
+        SELECT demandes.id, users.nom, users.prenom, demandes.statut
+        FROM demandes
+        JOIN etudiants ON etudiants.id = demandes.etudiant_id
+        JOIN users ON users.id = etudiants.user_id
+        WHERE demandes.entreprise_id = ?
+    ");
+    $stmt->execute([$entreprise_id]);
+    $demandes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    if (count($demandes) > 0): ?>
+        <table>
+            <tr>
+                <th>Nom</th>
+                <th>Prénom</th>
+                <th>Statut</th>
+                <th>Action</th>
+            </tr>
+            <?php foreach($demandes as $row): ?>
+            <tr>
+                <td><?= htmlspecialchars($row['nom']) ?></td>
+                <td><?= htmlspecialchars($row['prenom']) ?></td>
+                <td><?= htmlspecialchars($row['statut']) ?></td>
+                <td>
+                    <form method="POST" style="display:inline;">
+                        <input type="hidden" name="demande_id" value="<?= $row['id'] ?>">
+                        <button type="submit" name="valider" class="btn-pink" style="padding:8px 16px; margin-right:8px;">✅ Valider</button>
+                        <button type="submit" name="refuser" style="background:#ef4444; padding:8px 16px;">❌ Refuser</button>
+                    </form>
+                </td>
+            </tr>
+            <?php endforeach; ?>
+        </table>
+    <?php else: ?>
+        <p>❌ Aucune demande pour le moment</p>
+    <?php endif; ?>
+</div>
 
-            if (count($demandes) > 0): ?>
-                <table>
-                    <tr>
-                        <th>Nom</th>
-                        <th>Prénom</th>
-                        <th>Statut</th>
-                        <th>Action</th>
-                    </tr>
-                    <?php foreach($demandes as $row): ?>
-                    <tr>
-                        <td><?= htmlspecialchars($row['nom']) ?></td>
-                        <td><?= htmlspecialchars($row['prenom']) ?></td>
-                        <td><?= htmlspecialchars($row['statut']) ?></td>
-                        <td>
-                            <form method="POST" style="display:inline;">
-                                <input type="hidden" name="demande_id" value="<?= $row['id'] ?>">
-                                <button type="submit" name="valider" class="btn-pink" style="padding:8px 16px; margin-right:8px;">✅ Valider</button>
-                                <button type="submit" name="refuser" style="background:#ef4444; padding:8px 16px;">❌ Refuser</button>
-                            </form>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </table>
-            <?php else: ?>
-                <p>❌ Aucune demande pour le moment</p>
-            <?php endif; ?>
-        </div>
-
-        <!-- Liste des étudiants -->
-        <div class="card">
-            <h2>Liste des étudiants affectés à mon entreprise</h2>
-            <?php
-            $stmt = $conn->prepare("
-                SELECT users.id, users.nom, users.prenom, users.email, demandes.statut
-                FROM demandes
-                JOIN users ON users.id = demandes.etudiant_id
-                WHERE demandes.entreprise_id = ?
-            ");
-            $stmt->execute([$user_id]);
-            $etudiants = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-            if (count($etudiants) > 0): ?>
-                <table>
-                    <tr>
-                        <th>Nom</th>
-                        <th>Prénom</th>
-                        <th>Email</th>
-                        <th>Statut</th>
-                        <th>CV</th>
-                        <th>Upload CV</th>
-                    </tr>
-                    <?php foreach($etudiants as $row):
-                        $checkCv = $conn->prepare("SELECT fichier FROM cv WHERE etudiant_id = ?");
-                        $checkCv->execute([$row['id']]);
-                        $cv = $checkCv->fetch(PDO::FETCH_ASSOC);
-                    ?>
-                    <tr>
-                        <td><?= htmlspecialchars($row['nom']) ?></td>
-                        <td><?= htmlspecialchars($row['prenom']) ?></td>
-                        <td><?= htmlspecialchars($row['email']) ?></td>
-                        <td><?= htmlspecialchars($row['statut']) ?></td>
-                        <td>
-                            <?php if ($cv): ?>
-                                <a href="../../modules/etudiant/uploads_cv/<?= htmlspecialchars($cv['fichier']) ?>" download style="color:var(--accent); text-decoration:underline;">📄 Télécharger</a>
-                            <?php else: ?>
-                                ❌ Pas de CV
-                            <?php endif; ?>
-                        </td>
-                        <td>
-                            <form method="POST" enctype="multipart/form-data">
-                                <input type="hidden" name="etudiant_id_cv" value="<?= $row['id'] ?>">
-                                <input type="file" name="cv" accept=".pdf,.doc,.docx" required style="width:180px;">
-                                <button type="submit" name="upload_cv" style="padding:8px 16px;">📤 Uploader</button>
-                            </form>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </table>
-            <?php else: ?>
-                <p>❌ Aucun étudiant trouvé pour votre entreprise</p>
-            <?php endif; ?>
-        </div>
+       <!-- Liste des étudiants affectés -->
+<div class="card">
+    <h2>Liste des étudiants affectés à mon entreprise</h2>
+    <?php
+    $stmt = $conn->prepare("
+        SELECT users.id, users.nom, users.prenom, users.email, demandes.statut
+        FROM demandes
+        JOIN etudiants ON etudiants.id = demandes.etudiant_id
+        JOIN users ON users.id = etudiants.user_id
+        WHERE demandes.entreprise_id = ?
+    ");
+    $stmt->execute([$entreprise_id]);
+    $etudiants = $stmt->fetchAll(PDO::FETCH_ASSOC);
+if (count($etudiants) > 0): ?>
+        <table>
+            <tr>
+                <th>Nom</th>
+                <th>Prénom</th>
+                <th>Email</th>
+                <th>Statut</th>
+                <th>CV</th>
+                <th>Upload CV</th>
+            </tr>
+            <?php foreach($etudiants as $row):
+                $checkCv = $conn->prepare("SELECT fichier FROM cv WHERE etudiant_id = ?");
+                $checkCv->execute([$row['id']]);
+                $cv = $checkCv->fetch(PDO::FETCH_ASSOC);
+            ?>
+            <tr>
+                <td><?= htmlspecialchars($row['nom']) ?></td>
+                <td><?= htmlspecialchars($row['prenom']) ?></td>
+                <td><?= htmlspecialchars($row['email']) ?></td>
+                <td><?= htmlspecialchars($row['statut']) ?></td>
+                <td>
+                    <?php if ($cv): ?>
+                        <a href="../../modules/etudiant/uploads_cv/<?= htmlspecialchars($cv['fichier']) ?>" download style="color:var(--accent); text-decoration:underline;">📄 Télécharger</a>
+                    <?php else: ?>
+                        ❌ Pas de CV
+                    <?php endif; ?>
+                </td>
+                <td>
+                    <form method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="etudiant_id_cv" value="<?= $row['id'] ?>">
+                        <input type="file" name="cv" accept=".pdf,.doc,.docx" required style="width:180px;">
+                        <button type="submit" name="upload_cv" style="padding:8px 16px;">📤 Uploader</button>
+                    </form>
+                </td>
+            </tr>
+            <?php endforeach; ?>
+        </table>
+    <?php else: ?>
+        <p>❌ Aucun étudiant trouvé pour votre entreprise</p>
+    <?php endif; ?>
+</div>
 
         <!-- Évaluation -->
         <div class="card">
